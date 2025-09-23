@@ -263,23 +263,66 @@ def generate_order_signature():
         address=Web3.to_checksum_address(MEGAUSD_MINTING_ADDRESS), abi=mint_abi
     )
     acc: LocalAccount = Account.from_key(PRIVATE_KEY)
-    amount = 0.065
+    amount = 0.015
+
     mint_order = {
         "order_id": "a",
-        "order_type": 0,
-        "expiry": int(time.time()) + 86400,
+        "order_type": "MINT",
+        "expiry": int(time.time() + 86400 * 365),
         "nonce": int(time.time()),
-        "benefactor": w3.to_checksum_address(acc.address),
-        "beneficiary": w3.to_checksum_address(acc.address),
-        "collateral_asset": w3.to_checksum_address(USDC_ADDRESS),
+        "benefactor": acc.address,
+        "beneficiary": acc.address,
+        "collateral_asset": USDC_ADDRESS,
         "collateral_amount": int(amount * 10**6),
         "megausd_amount": int(amount * 10**18)
     }
+
+    order_tuple = (
+        str(mint_order["order_id"]),
+        0 if mint_order["order_type"] == "MINT" else 1,
+        mint_order["expiry"],
+        mint_order["nonce"],
+        w3.to_checksum_address(mint_order["benefactor"]),
+        w3.to_checksum_address(mint_order["beneficiary"]),
+        w3.to_checksum_address(mint_order["collateral_asset"]),
+        mint_order["collateral_amount"],
+        mint_order["megausd_amount"],
+    )
+
+    # string order_id;
+    # OrderType order_type;
+    # uint120 expiry;
+    # uint128 nonce;
+    # address benefactor;
+    # address beneficiary;
+    # address collateral_asset;
+    # uint128 collateral_amount;
+    # uint128 megausd_amount;
 
     signature = sign_order(w3, mint_order, acc, megausd_minting_contract)
     signature_hex = to_hex(signature.signature_bytes)
     print(mint_order)
     print(signature_hex)
+    print(signature)
+
+    sig = (0, signature_hex)
+
+    route = (
+        [w3.to_checksum_address("0x0d20d44Fbd48752241a2b18979dF2424e8a5F022")],
+        [10000]
+    )
+
+    tx = megausd_minting_contract.functions.mint(order_tuple, route, sig).build_transaction({
+        "from": acc.address,
+        "nonce": w3.eth.get_transaction_count(acc.address),
+        "gas": 500000,
+        "gasPrice": w3.eth.gas_price
+    })
+
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+
+    print("Transaction sent:", tx_hash.hex())
 
 
 def main():
