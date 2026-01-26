@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     eip712_version: str | None = None
     eip712_chain_id: int | None = None
     eip712_verifying_contract: str | None = None
+    allowance_spender: str | None = None
 
     @field_validator("private_key")
     @classmethod
@@ -38,6 +39,17 @@ class Settings(BaseSettings):
         if not re.fullmatch(r"0x[0-9a-fA-F]{40}", value):
             raise ValueError(
                 "eip712_verifying_contract must be a 0x-prefixed 40-byte hex address"
+            )
+        return value
+
+    @field_validator("allowance_spender")
+    @classmethod
+    def validate_allowance_spender(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", value):
+            raise ValueError(
+                "allowance_spender must be a 0x-prefixed 40-byte hex address"
             )
         return value
 
