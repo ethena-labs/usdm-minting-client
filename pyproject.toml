@@ -14,5 +14,8 @@ dependencies = [
   "httpx>=0.27.0",
 ]
 
+[project.scripts]
+usdm-allowance = "usdm.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
