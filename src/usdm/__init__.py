@@ -1,14 +1,18 @@
 """USDm Minting Client - Python SDK for mint/redeem operations."""
 
+from usdm.allowances import get_allowance, send_approve_tx, wait_for_receipt
 from usdm.config import Settings
 from usdm.rfq import (
+    AllowanceInsufficientError,
     Order,
     RfqClient,
     RfqError,
     RfqRequest,
     RfqResponse,
     Side,
+    SubmitResult,
     build_order,
+    submit_with_allowance,
 )
 from usdm.rpc import get_web3
 from usdm.signing import (
@@ -25,6 +29,10 @@ __all__ = [
     # Config
     "Settings",
     "get_web3",
+    # Allowances
+    "get_allowance",
+    "send_approve_tx",
+    "wait_for_receipt",
     # Signing
     "EIP712Domain",
     "DomainResolutionError",
@@ -41,4 +49,7 @@ __all__ = [
     "Side",
     "Order",
     "build_order",
+    "submit_with_allowance",
+    "SubmitResult",
+    "AllowanceInsufficientError",
 ]
