@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     rpc_url: HttpUrl
     private_key: str
+    api_url: HttpUrl = HttpUrl("https://public.api.megausd.money/")
 
     eip712_name: str | None = None
     eip712_version: str | None = None
