@@ -1,6 +1,7 @@
 import httpx
 
 from usdm.config import Settings
+from usdm.rfq.order import Order
 from usdm.rfq.types import RfqRequest, RfqResponse
 
 
@@ -47,3 +48,30 @@ class RfqClient:
             raise RfqError(data["error"])
 
         return RfqResponse.model_validate(data)
+
+    async def submit_order(self, order: Order, signature: str) -> str:
+        """Submit a signed order.
+
+        Args:
+            order: Order dict from build_order
+            signature: Hex signature from sign_order
+
+        Returns:
+            Transaction hash
+
+        Raises:
+            RfqError: If submission fails
+        """
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self.base_url}/order",
+                params={"signature": signature},
+                json=dict(order),  # TypedDict to dict for JSON
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        if "error" in data:
+            raise RfqError(data["error"])
+
+        return data["tx"]
