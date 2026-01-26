@@ -1,6 +1,15 @@
 """USDm Minting Client - Python SDK for mint/redeem operations."""
 
 from usdm.config import Settings
+from usdm.rfq import (
+    Order,
+    RfqClient,
+    RfqError,
+    RfqRequest,
+    RfqResponse,
+    Side,
+    build_order,
+)
 from usdm.rpc import get_web3
 from usdm.signing import (
     DomainResolutionError,
@@ -24,4 +33,12 @@ __all__ = [
     "sign_order",
     "ORDER_TYPE_MINT",
     "ORDER_TYPE_REDEEM",
+    # RFQ
+    "RfqClient",
+    "RfqError",
+    "RfqRequest",
+    "RfqResponse",
+    "Side",
+    "Order",
+    "build_order",
 ]
