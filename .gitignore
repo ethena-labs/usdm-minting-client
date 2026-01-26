@@ -1,1 +1,4 @@
 .planning/
+*.pyc
+__pycache__/
+*.egg-info/
