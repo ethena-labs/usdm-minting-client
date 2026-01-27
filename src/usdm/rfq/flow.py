@@ -70,10 +70,11 @@ async def submit_with_allowance(
         beneficiary=beneficiary,
         expiry_seconds=expiry_seconds,
     )
-    domain = resolve_domain(settings)
+    chain_id = w3.eth.chain_id
+    domain = resolve_domain(settings, chain_id)
     signed = sign_order(settings.private_key, order, domain)
 
-    spender = settings.allowance_spender or domain.verifying_contract
+    spender = settings.minting_contract or domain.verifying_contract
     required = int(rfq.collateral_amount)
     current = get_allowance(w3, rfq.collateral_asset, benefactor, spender)
     if current < required:
@@ -200,6 +201,7 @@ async def dry_run(
     Returns:
         DryRunResult with RFQ data, order, signature, signer address, and domain
     """
+    w3 = get_web3(settings)
     client = RfqClient(settings)
     rfq = await client.get_quote(request)
 
@@ -210,7 +212,8 @@ async def dry_run(
         expiry_seconds=expiry_seconds,
     )
 
-    domain = resolve_domain(settings)
+    chain_id = w3.eth.chain_id
+    domain = resolve_domain(settings, chain_id)
     signed = sign_order(settings.private_key, order, domain)
 
     return DryRunResult(

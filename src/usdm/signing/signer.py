@@ -12,7 +12,7 @@ from typing import Any, cast
 
 from eth_account import Account
 
-from usdm.config import Settings, settings_domain
+from usdm.config import Settings, get_domain
 from usdm.signing.order_types import ORDER_TYPES, PRIMARY_TYPE
 
 
@@ -43,18 +43,20 @@ class DomainResolutionError(Exception):
 
 def resolve_domain(
     settings: Settings,
+    chain_id: int,
     api_domain: dict[str, Any] | None = None,
     overrides: dict[str, Any] | None = None,
 ) -> EIP712Domain:
     """Resolve EIP-712 domain from available sources.
 
     Resolution order (later sources override earlier):
-    1. Settings (config/env) - base domain if configured
+    1. Settings (config/env) + chain_id from RPC - base domain if configured
     2. API response - domain provided by the RFQ API
     3. Overrides - per-request field overrides
 
     Args:
         settings: Application settings (may have EIP-712 domain fields)
+        chain_id: Chain ID from the RPC endpoint
         api_domain: Domain dict from API response (optional)
         overrides: Per-request field overrides (optional)
 
@@ -64,8 +66,8 @@ def resolve_domain(
     Raises:
         DomainResolutionError: If no complete domain can be assembled
     """
-    # Start with settings domain (may be None if not configured)
-    base = settings_domain(settings) or {}
+    # Start with settings domain (may be None if minting_contract not configured)
+    base = get_domain(settings, chain_id) or {}
 
     # Layer API domain on top (if provided)
     if api_domain:
@@ -81,19 +83,19 @@ def resolve_domain(
     if missing:
         raise DomainResolutionError(
             f"Cannot resolve EIP-712 domain; missing fields: {', '.join(sorted(missing))}. "
-            "Provide domain via API response, settings (USDM_EIP712_*), or overrides."
+            "Provide domain via API response, settings (USDM_MINTING_CONTRACT), or overrides."
         )
 
     # Cast validated values to expected types
     name = cast(str, base["name"])
     version = cast(str, base["version"])
-    chain_id = cast(int, base["chainId"])
+    chain_id_val = cast(int, base["chainId"])
     verifying_contract = cast(str, base["verifyingContract"])
 
     return EIP712Domain(
         name=name,
         version=version,
-        chain_id=chain_id,
+        chain_id=chain_id_val,
         verifying_contract=verifying_contract,
     )
 

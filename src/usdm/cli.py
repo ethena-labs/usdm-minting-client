@@ -109,11 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     settings = Settings()
     w3 = get_web3(settings)
     owner = Account.from_key(settings.private_key).address
-    spender = (
-        args.spender
-        or settings.allowance_spender
-        or settings.eip712_verifying_contract
-    )
+    spender = args.spender or settings.minting_contract
     if not spender:
         raise SystemExit("spender not provided and no default configured")
 

@@ -16,11 +16,9 @@ class Settings(BaseSettings):
     private_key: str
     api_url: HttpUrl = HttpUrl("https://public.api.megausd.money/")
 
-    eip712_name: str | None = None
-    eip712_version: str | None = None
-    eip712_chain_id: int | None = None
-    eip712_verifying_contract: str | None = None
-    allowance_spender: str | None = None
+    eip712_name: str = "USDmMinting"
+    eip712_version: str = "1"
+    minting_contract: str = "0xE0406beE6D58bCd7C1cA78191b6fde9CA060F6f2"
 
     @field_validator("private_key")
     @classmethod
@@ -31,57 +29,19 @@ class Settings(BaseSettings):
             )
         return value
 
-    @field_validator("eip712_verifying_contract")
+    @field_validator("minting_contract")
     @classmethod
-    def validate_verifying_contract(cls, value: str | None) -> str | None:
-        if value is None:
-            return value
+    def validate_minting_contract(cls, value: str) -> str:
         if not re.fullmatch(r"0x[0-9a-fA-F]{40}", value):
             raise ValueError(
-                "eip712_verifying_contract must be a 0x-prefixed 40-byte hex address"
+                "minting_contract must be a 0x-prefixed 40-byte hex address"
             )
         return value
 
-    @field_validator("allowance_spender")
-    @classmethod
-    def validate_allowance_spender(cls, value: str | None) -> str | None:
-        if value is None:
-            return value
-        if not re.fullmatch(r"0x[0-9a-fA-F]{40}", value):
-            raise ValueError(
-                "allowance_spender must be a 0x-prefixed 40-byte hex address"
-            )
-        return value
-
-    @model_validator(mode="after")
-    def validate_domain_fields(self) -> "Settings":
-        fields = {
-            "eip712_name": self.eip712_name,
-            "eip712_version": self.eip712_version,
-            "eip712_chain_id": self.eip712_chain_id,
-            "eip712_verifying_contract": self.eip712_verifying_contract,
-        }
-        provided = [value is not None for value in fields.values()]
-        if any(provided) and not all(provided):
-            missing = [name for name, value in fields.items() if value is None]
-            raise ValueError(
-                "EIP-712 domain settings are incomplete; missing: "
-                + ", ".join(missing)
-            )
-        return self
-
-
-def settings_domain(settings: Settings) -> dict[str, object] | None:
-    if (
-        settings.eip712_name is None
-        or settings.eip712_version is None
-        or settings.eip712_chain_id is None
-        or settings.eip712_verifying_contract is None
-    ):
-        return None
+def get_domain(settings: Settings, chain_id: int) -> dict[str, object]:
     return {
         "name": settings.eip712_name,
         "version": settings.eip712_version,
-        "chainId": settings.eip712_chain_id,
-        "verifyingContract": settings.eip712_verifying_contract,
+        "chainId": chain_id,
+        "verifyingContract": settings.minting_contract,
     }
