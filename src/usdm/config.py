@@ -1,6 +1,6 @@
 import re
 
-from pydantic import HttpUrl, field_validator, model_validator
+from pydantic import HttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
