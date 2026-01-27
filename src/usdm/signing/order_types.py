@@ -17,13 +17,13 @@ ORDER_TYPES: Final[dict[str, list[dict[str, str]]]] = {
     "Order": [
         {"name": "order_id", "type": "string"},
         {"name": "order_type", "type": "uint8"},
-        {"name": "expiry", "type": "uint128"},
-        {"name": "nonce", "type": "uint120"},
+        {"name": "expiry", "type": "uint120"},
+        {"name": "nonce", "type": "uint128"},
         {"name": "benefactor", "type": "address"},
         {"name": "beneficiary", "type": "address"},
         {"name": "collateral_asset", "type": "address"},
         {"name": "collateral_amount", "type": "uint128"},
-        {"name": "usde_amount", "type": "uint128"},
+        {"name": "usdm_amount", "type": "uint128"},
     ],
 }
 

@@ -133,6 +133,6 @@ def sign_order(
 
     return SignedOrder(
         order=order,
-        signature=signed.signature.hex(),
+        signature="0x" + signed.signature.hex(),
         signer_address=Account.from_key(private_key).address,
     )

@@ -21,8 +21,8 @@ class Order(TypedDict):
     benefactor: str
     beneficiary: str
     collateral_asset: str
-    collateral_amount: str  # wei string from RFQ
-    usde_amount: str  # wei string from RFQ
+    collateral_amount: int  # base units from RFQ
+    usdm_amount: int  # base units from RFQ
 
 
 def build_order(
@@ -33,8 +33,8 @@ def build_order(
 ) -> Order:
     """Build an order from RFQ response.
 
-    IMPORTANT: This copies amounts directly from RFQ without any
-    conversion or rounding. The API provides exact wei values.
+    IMPORTANT: This uses exact RFQ amounts converted to ints
+    without any rounding.
 
     Args:
         rfq: RFQ response with quote details
@@ -55,6 +55,6 @@ def build_order(
         benefactor=benefactor,
         beneficiary=beneficiary or benefactor,
         collateral_asset=rfq.collateral_asset,
-        collateral_amount=rfq.collateral_amount,  # direct from RFQ
-        usde_amount=rfq.usde_amount,  # direct from RFQ
+        collateral_amount=int(rfq.collateral_amount),
+        usdm_amount=int(rfq.usdm_amount),
     )

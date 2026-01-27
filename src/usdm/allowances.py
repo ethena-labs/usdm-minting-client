@@ -68,7 +68,7 @@ def send_approve_tx(
         {
             "from": owner,
             "nonce": w3.eth.get_transaction_count(owner),
-            "gas": w3.eth.estimate_gas({"from": owner}),
+            "gas": w3.eth.estimate_gas({"from": owner}) + 5000,
             "gasPrice": w3.eth.gas_price,
             "chainId": w3.eth.chain_id,
         }
@@ -79,4 +79,4 @@ def send_approve_tx(
 
 
 def wait_for_receipt(w3: Web3, tx_hash: str, timeout: int = 120) -> object:
-    return w3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout)
+    return w3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout, poll_latency=5)

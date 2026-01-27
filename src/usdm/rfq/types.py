@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Side(str, Enum):
@@ -11,10 +11,11 @@ class Side(str, Enum):
 class RfqRequest(BaseModel):
     """Parameters for requesting an RFQ quote."""
 
-    pair: str = "USDC/USDe"  # default pair
-    type_: str = "STANDARD"  # quote type
+    pair: str = "USDC/USDm"  # default pair
+    type_: str = "ALGO"  # quote type
     side: Side
     size: float  # human-readable amount
+    benefactor: str
 
 
 class RfqResponse(BaseModel):
@@ -23,8 +24,8 @@ class RfqResponse(BaseModel):
     rfq_id: str
     pair: str
     side: Side
-    size: float
-    collateral_asset: str  # address
-    collateral_amount: str  # wei string - DO NOT convert
-    usde_amount: str  # wei string - DO NOT convert
-    gas: int
+    size: float | str
+    collateral_asset: str = Field(alias="collateral_asset_address")  # address
+    collateral_amount: str  # base units string - DO NOT convert
+    usdm_amount: str  # wei string - DO NOT convert
+    gas: str  # quoted gas as string

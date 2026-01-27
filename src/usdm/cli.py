@@ -47,7 +47,12 @@ async def _handle_rfq_command(args: argparse.Namespace, side: Side) -> int:
     try:
         settings = Settings()
         benefactor = Account.from_key(settings.private_key).address
-        request = RfqRequest(side=side, size=args.size)
+        request = RfqRequest(
+            side=side,
+            size=args.size,
+            benefactor=benefactor,
+            beneficiary=args.beneficiary,
+        )
         result = await submit_and_wait(
             settings,
             request,

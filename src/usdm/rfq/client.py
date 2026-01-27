@@ -34,6 +34,7 @@ class RfqClient:
             "type_": request.type_,
             "side": request.side.value,
             "size": request.size,
+            "benefactor": request.benefactor,
         }
 
         async with httpx.AsyncClient() as client:
@@ -68,7 +69,20 @@ class RfqClient:
                 params={"signature": signature},
                 json=dict(order),  # TypedDict to dict for JSON
             )
-            response.raise_for_status()
+
+            if response.is_error:
+                try:
+                    data = response.json()
+                except ValueError:
+                    raise RfqError(
+                        f"HTTP {response.status_code} error from RFQ API"
+                    )
+                if "error" in data:
+                    raise RfqError(data["error"])
+                raise RfqError(
+                    f"HTTP {response.status_code} error from RFQ API"
+                )
+
             data = response.json()
 
         if "error" in data:
