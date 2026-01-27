@@ -27,6 +27,15 @@ class SubmitResult:
     requoted: bool
 
 
+@dataclass(frozen=True)
+class SubmitReceiptResult:
+    tx_hash: str
+    rfq_id: str
+    requoted: bool
+    receipt_status: int | None
+    receipt: object
+
+
 async def submit_with_allowance(
     settings: Settings,
     request: RfqRequest,
@@ -111,3 +120,39 @@ async def submit_with_allowance(
 
     tx = await client.submit_order(order, signed.signature)
     return SubmitResult(tx_hash=tx, rfq_id=rfq.rfq_id, requoted=True)
+
+
+async def submit_and_wait(
+    settings: Settings,
+    request: RfqRequest,
+    benefactor: str,
+    beneficiary: str | None = None,
+    *,
+    expiry_seconds: int = 60,
+    max_quote_age_seconds: int | None = None,
+    auto_approve: bool = False,
+    recheck_allowance_after_approve: bool = True,
+    requote_on_stale: bool = True,
+    receipt_timeout: int = 120,
+) -> SubmitReceiptResult:
+    result = await submit_with_allowance(
+        settings,
+        request,
+        benefactor,
+        beneficiary,
+        expiry_seconds=expiry_seconds,
+        max_quote_age_seconds=max_quote_age_seconds,
+        auto_approve=auto_approve,
+        recheck_allowance_after_approve=recheck_allowance_after_approve,
+        requote_on_stale=requote_on_stale,
+    )
+    w3 = get_web3(settings)
+    receipt = wait_for_receipt(w3, result.tx_hash, timeout=receipt_timeout)
+    receipt_status = receipt.get("status") if hasattr(receipt, "get") else receipt["status"]
+    return SubmitReceiptResult(
+        tx_hash=result.tx_hash,
+        rfq_id=result.rfq_id,
+        requoted=result.requoted,
+        receipt_status=receipt_status,
+        receipt=receipt,
+    )
