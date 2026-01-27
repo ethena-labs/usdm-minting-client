@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import sys
 
 from eth_account import Account
@@ -7,7 +8,7 @@ from eth_account import Account
 from usdm.allowances import get_allowance, send_approve_tx, wait_for_receipt
 from usdm.config import Settings
 from usdm.rfq.client import RfqError
-from usdm.rfq.flow import AllowanceInsufficientError, submit_and_wait
+from usdm.rfq.flow import AllowanceInsufficientError, dry_run, submit_and_wait
 from usdm.rfq.types import RfqRequest, Side
 from usdm.rpc import get_web3
 
@@ -33,12 +34,14 @@ def build_parser() -> argparse.ArgumentParser:
     mint.add_argument("--beneficiary")
     mint.add_argument("--auto-approve", action="store_true")
     mint.add_argument("--receipt-timeout", type=int, default=120)
+    mint.add_argument("--dry-run", action="store_true", help="Build and sign order without submitting")
 
     redeem = subparsers.add_parser("redeem")
     redeem.add_argument("--size", required=True, type=float)
     redeem.add_argument("--beneficiary")
     redeem.add_argument("--auto-approve", action="store_true")
     redeem.add_argument("--receipt-timeout", type=int, default=120)
+    redeem.add_argument("--dry-run", action="store_true", help="Build and sign order without submitting")
 
     return parser
 
@@ -53,6 +56,24 @@ async def _handle_rfq_command(args: argparse.Namespace, side: Side) -> int:
             benefactor=benefactor,
             beneficiary=args.beneficiary,
         )
+
+        if args.dry_run:
+            result = await dry_run(
+                settings,
+                request,
+                benefactor,
+                beneficiary=args.beneficiary,
+            )
+            output = {
+                "rfq": result.rfq,
+                "order": result.order,
+                "signature": result.signature,
+                "signer": result.signer,
+                "domain": result.domain,
+            }
+            print(json.dumps(output, indent=2))
+            return 0
+
         result = await submit_and_wait(
             settings,
             request,
