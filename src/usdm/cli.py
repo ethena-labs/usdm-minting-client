@@ -13,7 +13,7 @@ from usdm.rpc import get_web3
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="usdm-allowance")
+    parser = argparse.ArgumentParser(prog="usdm")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     allowance = subparsers.add_parser("allowance")

@@ -16,6 +16,7 @@ dependencies = [
 
 [project.scripts]
 usdm-allowance = "usdm.cli:main"
+usdm = "usdm.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
