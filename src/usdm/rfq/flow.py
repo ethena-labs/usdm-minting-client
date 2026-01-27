@@ -1,5 +1,6 @@
 import time
 from dataclasses import dataclass
+from typing import Any
 
 from usdm.allowances import get_allowance, send_approve_tx, wait_for_receipt
 from usdm.config import Settings
@@ -155,4 +156,67 @@ async def submit_and_wait(
         requoted=result.requoted,
         receipt_status=receipt_status,
         receipt=receipt,
+    )
+
+
+@dataclass(frozen=True)
+class DryRunResult:
+    """Result of a dry-run order build and sign operation."""
+
+    rfq: dict[str, Any]
+    order: dict[str, Any]
+    signature: str
+    signer: str
+    domain: dict[str, Any]
+
+
+async def dry_run(
+    settings: Settings,
+    request: RfqRequest,
+    benefactor: str,
+    beneficiary: str | None = None,
+    expiry_seconds: int = 60,
+) -> DryRunResult:
+    """Build and sign an RFQ order without submitting.
+
+    This function performs all steps up to (but not including) order submission:
+    - Fetches an RFQ quote
+    - Builds the order
+    - Resolves the EIP-712 domain
+    - Signs the order
+
+    It does NOT:
+    - Check or modify allowances
+    - Submit the order to the RFQ API
+    - Wait for any receipts
+
+    Args:
+        settings: Application settings
+        request: RFQ request parameters
+        benefactor: Address providing collateral (mint) or USDm (redeem)
+        beneficiary: Address receiving output (defaults to benefactor)
+        expiry_seconds: Order validity in seconds (default 60)
+
+    Returns:
+        DryRunResult with RFQ data, order, signature, signer address, and domain
+    """
+    client = RfqClient(settings)
+    rfq = await client.get_quote(request)
+
+    order = build_order(
+        rfq,
+        benefactor=benefactor,
+        beneficiary=beneficiary,
+        expiry_seconds=expiry_seconds,
+    )
+
+    domain = resolve_domain(settings)
+    signed = sign_order(settings.private_key, order, domain)
+
+    return DryRunResult(
+        rfq=rfq.model_dump(by_alias=True, mode="json"),
+        order=dict(order),
+        signature=signed.signature,
+        signer=signed.signer_address,
+        domain=domain.to_dict(),
     )

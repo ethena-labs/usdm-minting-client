@@ -1,8 +1,10 @@
 from usdm.rfq.client import RfqClient, RfqError
 from usdm.rfq.flow import (
     AllowanceInsufficientError,
+    DryRunResult,
     SubmitReceiptResult,
     SubmitResult,
+    dry_run,
     submit_and_wait,
     submit_with_allowance,
 )
@@ -22,4 +24,6 @@ __all__ = [
     "SubmitResult",
     "SubmitReceiptResult",
     "AllowanceInsufficientError",
+    "dry_run",
+    "DryRunResult",
 ]

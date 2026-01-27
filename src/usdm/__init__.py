@@ -4,6 +4,7 @@ from usdm.allowances import get_allowance, send_approve_tx, wait_for_receipt
 from usdm.config import Settings
 from usdm.rfq import (
     AllowanceInsufficientError,
+    DryRunResult,
     Order,
     RfqClient,
     RfqError,
@@ -12,6 +13,7 @@ from usdm.rfq import (
     Side,
     SubmitResult,
     build_order,
+    dry_run,
     submit_with_allowance,
 )
 from usdm.rpc import get_web3
@@ -52,4 +54,6 @@ __all__ = [
     "submit_with_allowance",
     "SubmitResult",
     "AllowanceInsufficientError",
+    "dry_run",
+    "DryRunResult",
 ]
