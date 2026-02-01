@@ -1,6 +1,6 @@
 # All files owned by Product Engineering team
-* @ethena-labs/product-engineering
+* @ethena-labs/product-engineering @ethena-labs/defi-engineering
 
 # Sensitive repo settings and workflows owned by admins
-.github/workflows/* @deHB6 @FJ-Riveros
-.github/CODEOWNERS @deHB6 @FJ-Riveros
+.github/workflows/* @deHB6 @iethena
+.github/CODEOWNERS @deHB6 @iethena
