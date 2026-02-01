@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "usdm-minting-client"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "web3==7.14.0",
+  "eth-account==0.13.7",
+  "pydantic==2.12.5",
+  "pydantic-settings==2.12.0",
+  "httpx>=0.27.0",
+]
+
+[project.scripts]
+usdm-allowance = "usdm.cli:main"
+usdm = "usdm.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,225 @@
+import time
+from dataclasses import dataclass
+from typing import Any
+
+from usdm.allowances import get_allowance, send_approve_tx, wait_for_receipt
+from usdm.config import Settings
+from usdm.rfq.client import RfqClient, RfqError
+from usdm.rfq.order import build_order
+from usdm.rfq.types import RfqRequest
+from usdm.rpc import get_web3
+from usdm.signing import resolve_domain, sign_order
+
+
+class AllowanceInsufficientError(Exception):
+    """Raised when allowance is below required amount."""
+
+
+def is_stale_quote_error(error: Exception | str) -> bool:
+    message = str(error).lower()
+    keywords = ["stale", "expired", "rfq expired", "quote expired", "order expired"]
+    return any(keyword in message for keyword in keywords)
+
+
+@dataclass(frozen=True)
+class SubmitResult:
+    tx_hash: str
+    rfq_id: str
+    requoted: bool
+
+
+@dataclass(frozen=True)
+class SubmitReceiptResult:
+    tx_hash: str
+    rfq_id: str
+    requoted: bool
+    receipt_status: int | None
+    receipt: object
+
+
+async def submit_with_allowance(
+    settings: Settings,
+    request: RfqRequest,
+    benefactor: str,
+    beneficiary: str | None = None,
+    *,
+    expiry_seconds: int = 60,
+    max_quote_age_seconds: int | None = None,
+    auto_approve: bool = False,
+    recheck_allowance_after_approve: bool = True,
+    requote_on_stale: bool = True,
+) -> SubmitResult:
+    client = RfqClient(settings)
+    w3 = get_web3(settings)
+
+    async def fetch_quote() -> tuple[float, object]:
+        received_at = time.time()
+        rfq = await client.get_quote(request)
+        return received_at, rfq
+
+    received_at, rfq = await fetch_quote()
+    if (
+        max_quote_age_seconds is not None
+        and time.time() - received_at > max_quote_age_seconds
+    ):
+        received_at, rfq = await fetch_quote()
+
+    order = build_order(
+        rfq,
+        benefactor=benefactor,
+        beneficiary=beneficiary,
+        expiry_seconds=expiry_seconds,
+    )
+    chain_id = w3.eth.chain_id
+    domain = resolve_domain(settings, chain_id)
+    signed = sign_order(settings.private_key, order, domain)
+
+    spender = settings.minting_contract or domain.verifying_contract
+    required = int(rfq.collateral_amount)
+    current = get_allowance(w3, rfq.collateral_asset, benefactor, spender)
+    if current < required:
+        if not auto_approve:
+            raise AllowanceInsufficientError(
+                f"Allowance {current} below required {required} for spender {spender}"
+            )
+        tx_hash = send_approve_tx(
+            w3,
+            settings.private_key,
+            rfq.collateral_asset,
+            spender,
+            required,
+        )
+        wait_for_receipt(w3, tx_hash)
+        if recheck_allowance_after_approve:
+            current = get_allowance(w3, rfq.collateral_asset, benefactor, spender)
+            if current < required:
+                raise AllowanceInsufficientError(
+                    f"Allowance {current} still below required {required} after approve"
+                )
+
+    try:
+        tx = await client.submit_order(order, signed.signature)
+        return SubmitResult(tx_hash=tx, rfq_id=rfq.rfq_id, requoted=False)
+    except RfqError as exc:
+        if not requote_on_stale or not is_stale_quote_error(exc):
+            raise
+
+    _, rfq = await fetch_quote()
+    order = build_order(
+        rfq,
+        benefactor=benefactor,
+        beneficiary=beneficiary,
+        expiry_seconds=expiry_seconds,
+    )
+    signed = sign_order(settings.private_key, order, domain)
+
+    required = int(rfq.collateral_amount)
+    current = get_allowance(w3, rfq.collateral_asset, benefactor, spender)
+    if current < required:
+        raise AllowanceInsufficientError(
+            f"Allowance {current} below required {required} after requote"
+        )
+
+    tx = await client.submit_order(order, signed.signature)
+    return SubmitResult(tx_hash=tx, rfq_id=rfq.rfq_id, requoted=True)
+
+
+async def submit_and_wait(
+    settings: Settings,
+    request: RfqRequest,
+    benefactor: str,
+    beneficiary: str | None = None,
+    *,
+    expiry_seconds: int = 60,
+    max_quote_age_seconds: int | None = None,
+    auto_approve: bool = False,
+    recheck_allowance_after_approve: bool = True,
+    requote_on_stale: bool = True,
+    receipt_timeout: int = 120,
+) -> SubmitReceiptResult:
+    result = await submit_with_allowance(
+        settings,
+        request,
+        benefactor,
+        beneficiary,
+        expiry_seconds=expiry_seconds,
+        max_quote_age_seconds=max_quote_age_seconds,
+        auto_approve=auto_approve,
+        recheck_allowance_after_approve=recheck_allowance_after_approve,
+        requote_on_stale=requote_on_stale,
+    )
+    w3 = get_web3(settings)
+    receipt = wait_for_receipt(w3, result.tx_hash, timeout=receipt_timeout)
+    receipt_status = receipt.get("status") if hasattr(receipt, "get") else receipt["status"]
+    return SubmitReceiptResult(
+        tx_hash=result.tx_hash,
+        rfq_id=result.rfq_id,
+        requoted=result.requoted,
+        receipt_status=receipt_status,
+        receipt=receipt,
+    )
+
+
+@dataclass(frozen=True)
+class DryRunResult:
+    """Result of a dry-run order build and sign operation."""
+
+    rfq: dict[str, Any]
+    order: dict[str, Any]
+    signature: str
+    signer: str
+    domain: dict[str, Any]
+
+
+async def dry_run(
+    settings: Settings,
+    request: RfqRequest,
+    benefactor: str,
+    beneficiary: str | None = None,
+    expiry_seconds: int = 60,
+) -> DryRunResult:
+    """Build and sign an RFQ order without submitting.
+
+    This function performs all steps up to (but not including) order submission:
+    - Fetches an RFQ quote
+    - Builds the order
+    - Resolves the EIP-712 domain
+    - Signs the order
+
+    It does NOT:
+    - Check or modify allowances
+    - Submit the order to the RFQ API
+    - Wait for any receipts
+
+    Args:
+        settings: Application settings
+        request: RFQ request parameters
+        benefactor: Address providing collateral (mint) or USDm (redeem)
+        beneficiary: Address receiving output (defaults to benefactor)
+        expiry_seconds: Order validity in seconds (default 60)
+
+    Returns:
+        DryRunResult with RFQ data, order, signature, signer address, and domain
+    """
+    w3 = get_web3(settings)
+    client = RfqClient(settings)
+    rfq = await client.get_quote(request)
+
+    order = build_order(
+        rfq,
+        benefactor=benefactor,
+        beneficiary=beneficiary,
+        expiry_seconds=expiry_seconds,
+    )
+
+    chain_id = w3.eth.chain_id
+    domain = resolve_domain(settings, chain_id)
+    signed = sign_order(settings.private_key, order, domain)
+
+    return DryRunResult(
+        rfq=rfq.model_dump(by_alias=True, mode="json"),
+        order=dict(order),
+        signature=signed.signature,
+        signer=signed.signer_address,
+        domain=domain.to_dict(),
+    )
