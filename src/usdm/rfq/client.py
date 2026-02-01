@@ -63,29 +63,20 @@ class RfqClient:
         Raises:
             RfqError: If submission fails
         """
+
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{self.base_url}/order",
                 params={"signature": signature},
-                json=dict(order),  # TypedDict to dict for JSON
+                json=dict(order),
             )
-
-            if response.is_error:
-                try:
-                    data = response.json()
-                except ValueError:
-                    raise RfqError(
-                        f"HTTP {response.status_code} error from RFQ API"
-                    )
-                if "error" in data:
-                    raise RfqError(data["error"])
-                raise RfqError(
-                    f"HTTP {response.status_code} error from RFQ API"
-                )
-
             data = response.json()
 
-        if "error" in data:
-            raise RfqError(data["error"])
+        if response.is_error or "error" in data or "error_code" in data:
+            if "error_name" in data:
+                raise RfqError(data)
+            if "error" in data:
+                raise RfqError(data["error"])
+            raise RfqError(f"HTTP {response.status_code}: {data}")
 
         return data["tx"]
