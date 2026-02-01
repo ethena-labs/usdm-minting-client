@@ -1,8 +1,13 @@
+import json
+import logging
+
 import httpx
 
 from usdm.config import Settings
 from usdm.rfq.order import Order
 from usdm.rfq.types import RfqRequest, RfqResponse
+
+logger = logging.getLogger(__name__)
 
 
 class RfqError(Exception):
@@ -37,6 +42,8 @@ class RfqClient:
             "benefactor": request.benefactor,
         }
 
+        logger.debug("RFQ request params: %s", json.dumps(params, indent=2))
+
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/rfq",
@@ -48,6 +55,7 @@ class RfqClient:
         if "error" in data:
             raise RfqError(data["error"])
 
+        logger.info("RFQ response: %s", json.dumps(data, indent=2))
         return RfqResponse.model_validate(data)
 
     async def submit_order(self, order: Order, signature: str) -> str:
@@ -63,6 +71,9 @@ class RfqClient:
         Raises:
             RfqError: If submission fails
         """
+        order_payload = dict(order)
+        logger.info("Order submission - signature: %s", signature)
+        logger.info("Order submission - payload: %s", json.dumps(order_payload, indent=2))
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

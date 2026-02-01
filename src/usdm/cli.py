@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import sys
 
 from eth_account import Account
@@ -34,19 +35,34 @@ def build_parser() -> argparse.ArgumentParser:
     mint.add_argument("--beneficiary")
     mint.add_argument("--auto-approve", action="store_true")
     mint.add_argument("--receipt-timeout", type=int, default=120)
-    mint.add_argument("--dry-run", action="store_true", help="Build and sign order without submitting")
+    mint.add_argument(
+        "--dry-run", action="store_true", help="Build and sign order without submitting"
+    )
+    mint.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
 
     redeem = subparsers.add_parser("redeem")
     redeem.add_argument("--size", required=True, type=float)
     redeem.add_argument("--beneficiary")
     redeem.add_argument("--auto-approve", action="store_true")
     redeem.add_argument("--receipt-timeout", type=int, default=120)
-    redeem.add_argument("--dry-run", action="store_true", help="Build and sign order without submitting")
+    redeem.add_argument(
+        "--dry-run", action="store_true", help="Build and sign order without submitting"
+    )
+    redeem.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
 
     return parser
 
 
 async def _handle_rfq_command(args: argparse.Namespace, side: Side) -> int:
+    if getattr(args, "verbose", False):
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(name)s - %(levelname)s - %(message)s",
+        )
     try:
         settings = Settings()
         benefactor = Account.from_key(settings.private_key).address
