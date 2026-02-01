@@ -13,7 +13,7 @@ from typing import Any, cast
 from eth_account import Account
 
 from usdm.config import Settings, get_domain
-from usdm.signing.order_types import ORDER_TYPES, PRIMARY_TYPE
+from usdm.signing.order_types import ORDER_TYPE_MINT, ORDER_TYPE_REDEEM, ORDER_TYPES, PRIMARY_TYPE
 
 
 @dataclass(frozen=True)
@@ -124,13 +124,20 @@ def sign_order(
     Returns:
         SignedOrder with the order, signature, and signer address
     """
-    # Sign using eth_account's 3-argument style
-    # (domain_data, message_types, message_data)
+    # Reshape the API-shaped order into the EIP-712 signing shape:
+    #  - order_type: "MINT"/"REDEEM" → 0/1
+    signing_data = {
+        k: v for k, v in order.items() if k not in ("order_type")
+    }
+    signing_data["order_type"] = (
+        ORDER_TYPE_MINT if order["order_type"] == "MINT" else ORDER_TYPE_REDEEM
+    )
+
     signed = Account.sign_typed_data(
         private_key,
         domain_data=domain.to_dict(),
         message_types=ORDER_TYPES,
-        message_data=order,
+        message_data=signing_data,
     )
 
     return SignedOrder(

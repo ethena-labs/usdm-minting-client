@@ -27,5 +27,5 @@ class RfqResponse(BaseModel):
     size: float | str
     collateral_asset: str = Field(alias="collateral_asset_address")  # address
     collateral_amount: str  # base units string - DO NOT convert
-    usdm_amount: str  # wei string - DO NOT convert
+    usdm_amount: str
     gas: str  # quoted gas as string
