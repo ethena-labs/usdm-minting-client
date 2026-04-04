@@ -7,7 +7,7 @@ name = "usdm-minting-client"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-  "web3==7.14.0",
+  "web3==7.15.0",
   "eth-account==0.13.7",
   "pydantic==2.12.5",
   "pydantic-settings==2.12.0",
