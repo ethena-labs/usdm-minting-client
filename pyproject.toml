@@ -40,10 +40,3 @@ python_functions = ["test_*"]
 
 [tool.behave]
 paths = ["tests/integration"]
-
-[tool.uv]
-constraint-dependencies = [
-  "aiohttp>=3.13.5",
-  "python-dotenv>=1.2.2",
-  "requests>=2.33.1",
-]
