@@ -4,9 +4,9 @@ requires-python = ">=3.10"
 
 [manifest]
 constraints = [
-    { name = "aiohttp", specifier = ">=3.13.4" },
+    { name = "aiohttp", specifier = ">=3.13.5" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
-    { name = "requests", specifier = ">=2.33.0" },
+    { name = "requests", specifier = ">=2.33.1" },
 ]
 
 [[package]]

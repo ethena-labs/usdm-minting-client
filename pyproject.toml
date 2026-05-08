@@ -43,7 +43,7 @@ paths = ["tests/integration"]
 
 [tool.uv]
 constraint-dependencies = [
-  "aiohttp>=3.13.4",
+  "aiohttp>=3.13.5",
   "python-dotenv>=1.2.2",
-  "requests>=2.33.0",
+  "requests>=2.33.1",
 ]
