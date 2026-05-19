@@ -27,6 +27,14 @@ test = [
   "respx>=0.21.0",
 ]
 
+[tool.uv]
+override-dependencies = [
+    "aiohttp>=3.13.4",
+    "python-dotenv>=1.2.2",
+    "requests>=2.33.0",
+    "urllib3>=2.7.0",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
