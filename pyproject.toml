@@ -30,6 +30,7 @@ test = [
 [tool.uv]
 override-dependencies = [
     "aiohttp>=3.13.4",
+    "idna>=3.15",
     "python-dotenv>=1.2.2",
     "requests>=2.33.0",
     "urllib3>=2.7.0",
