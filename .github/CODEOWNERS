@@ -2,5 +2,5 @@
 * @ethena-labs/product-engineering @ethena-labs/defi-engineering
 
 # Sensitive repo settings and workflows owned by admins
-.github/workflows/* @deHB6 @iethena
-.github/CODEOWNERS @deHB6 @iethena
+.github/workflows/* @deHB6 @iethena @ElliotWood13
+.github/CODEOWNERS @deHB6 @iethena @ElliotWood13
