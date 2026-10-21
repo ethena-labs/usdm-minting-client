@@ -34,6 +34,7 @@ override-dependencies = [
     "python-dotenv>=1.2.2",
     "requests>=2.33.0",
     "urllib3>=2.8.0",
+    "certifi>=2026.10.19",  # emSign CA compromise
 ]
 
 [tool.setuptools.packages.find]
